@@ -38,20 +38,28 @@ func main() {
 	// 1 33591U 09005A   25074.18988975  .00000419  00000+0  24768-3 0  9991
 	// 2 33591  99.0072 138.3781 0012918 245.4492 114.5334 14.13308947829901
 
-	tleLine1 := "1 33591U 09005A   25074.18988975  .00000419  00000+0  24768-3 0  9991"
-	tleLine2 := "2 33591  99.0072 138.3781 0012918 245.4492 114.5334 14.13308947829901"
+	// NOAA 18
+	// 1 28654U 05018A   25075.18855678  .00000469  00000+0  27229-3 0  9999
+	// 2 28654  98.8462 155.6171 0014190  16.3868 343.7760 14.13542600 21680
+
+	// GOES 14
+	// 1 35491U 09033A   25074.65733697 -.00000069  00000+0  00000+0 0  9995
+	// 2 35491   0.4919  89.3626 0000671 182.2428  30.4186  1.00269709  1997
+
+	tleLine1 := "1 28654U 05018A   25075.18855678  .00000469  00000+0  27229-3 0  9999"
+	tleLine2 := "2 28654  98.8462 155.6171 0014190  16.3868 343.7760 14.13542600 21680"
 
 	// Parse the TLE data into a Satellite object
 	sat := satellite.TLEToSat(tleLine1, tleLine2, satellite.GravityWGS72)
 
 	// Compute the orbit
-	const orbitPoints = 100
+	const orbitPoints = 110
 	var orbitPath [orbitPoints]rl.Vector3
 
 	computeOrbitPath(sat, scale, orbitPath[:], orbitPoints)
 
 	rl.SetConfigFlags(rl.FlagWindowResizable | rl.FlagMsaa4xHint)
-	rl.InitWindow(1280, 720, "NOAA 19")
+	rl.InitWindow(1280, 720, "NOAA 18")
 	rl.MaximizeWindow()
 	defer rl.CloseWindow()
 
@@ -76,7 +84,6 @@ func main() {
 			followSatellite = !followSatellite
 			// Reset the camera position
 			camera.Position = rl.NewVector3(-10.0, 8.0, -10.0)
-			rl.ShowCursor()
 		}
 
 		if followSatellite {
@@ -88,9 +95,7 @@ func main() {
 			zoom -= rl.GetMouseWheelMoveV().Y / 10
 			zoom = rl.Clamp(zoom, 1.1, 10.0)
 		} else {
-			rl.UpdateCamera(&camera, rl.CameraThirdPerson)
-			rl.SetMousePosition(int32(rl.GetScreenWidth()/2), int32(rl.GetScreenHeight()/2))
-			rl.HideCursor()
+			rl.UpdateCamera(&camera, rl.CameraOrbital)
 		}
 
 		rl.BeginDrawing()
@@ -98,10 +103,7 @@ func main() {
 
 		rl.BeginMode3D(camera)
 
-		rl.DrawGrid(50, 2.0)
-		rl.DrawLine3D(rl.NewVector3(0, 0, 0), rl.NewVector3(100, 0, 0), rl.Red)
-		rl.DrawLine3D(rl.NewVector3(0, 0, 0), rl.NewVector3(0, 100, 0), rl.Green)
-		rl.DrawLine3D(rl.NewVector3(0, 0, 0), rl.NewVector3(0, 0, 100), rl.Blue)
+		rl.DrawGrid(50, 6378/1000.0)
 
 		// Calculate how many seconds have passed in the day
 		secondsInDay := float32(now.Hour()*3600 + now.Minute()*60 + now.Second())
