@@ -64,7 +64,7 @@ func main() {
 			zoom = rl.Clamp(zoom, 1.1, 10.0)
 		} else {
 			rl.UpdateCamera(&camera, rl.CameraThirdPerson)
-			rl.SetMousePosition(rl.GetScreenWidth() / 2, rl.GetScreenHeight() / 2)
+			rl.SetMousePosition(int32(rl.GetScreenWidth() / 2), int32(rl.GetScreenHeight() / 2))
 			rl.HideCursor()
 		}
 
