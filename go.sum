@@ -1,0 +1,17 @@
+github.com/ebitengine/purego v0.8.1 h1:sdRKd6plj7KYW33EH5As6YKfe8m9zbN9JMrOjNVF/BE=
+github.com/ebitengine/purego v0.8.1/go.mod h1:iIjxzd6CiRiOG0UyXP+V1+jWqUXVjPKLAI0mRfJZTmQ=
+github.com/gen2brain/raylib-go/raygui v0.0.0-20250215042252-db8e47f0e5c5 h1:RBIUgStpzR3g5g7qIkK4+sSbYXVTQXiXGqRZ84j3+ZY=
+github.com/gen2brain/raylib-go/raygui v0.0.0-20250215042252-db8e47f0e5c5/go.mod h1:Ji/uPEko2AUkcyPLAelEUa+E8Npc89/XY5Fo/lS/e3I=
+github.com/gen2brain/raylib-go/raylib v0.0.0-20250215042252-db8e47f0e5c5 h1:k8ZAxLgb/p5TvCi5VHFHM8JdnjwShNK4A0bLIwbktAU=
+github.com/gen2brain/raylib-go/raylib v0.0.0-20250215042252-db8e47f0e5c5/go.mod h1:BaY76bZk7nw1/kVOSQObPY1v1iwVE1KHAGMfvI6oK1Q=
+github.com/joshuaferrara/go-satellite v0.0.0-20220611180459-512638c64e5b h1:JlltDRgni6FuoFwluvoZCrE6cmpojccO4WsqeYlFJLE=
+github.com/joshuaferrara/go-satellite v0.0.0-20220611180459-512638c64e5b/go.mod h1:msW2QeN9IsnRyvuK8OBAzBwn6DHwXpiAiqBk8dbLfrU=
+github.com/onsi/ginkgo v1.2.1-0.20160509182050-5437a97bf824/go.mod h1:lLunBs/Ym6LB5Z9jYTR76FiuTmxDTDusOGeTQH+WWjE=
+github.com/onsi/gomega v0.0.0-20160516222431-c73e51675ad2/go.mod h1:C1qb7wdrVGGVU+Z6iS04AVkA3Q65CEZX59MT0QO5uiA=
+github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
+github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
+golang.org/x/exp v0.0.0-20250305212735-054e65f0b394 h1:nDVHiLt8aIbd/VzvPWN6kSOPE7+F/fNFDSXLVYkE/Iw=
+golang.org/x/exp v0.0.0-20250305212735-054e65f0b394/go.mod h1:sIifuuw/Yco/y6yb6+bDNfyeQ/MdPUy/hKEMYQV17cM=
+golang.org/x/sys v0.31.0 h1:ioabZlmFYtWhL+TRYpcnNlLwhyxaM9kWTDEmfnprqik=
+golang.org/x/sys v0.31.0/go.mod h1:BJP2sWEmIv4KK5OTEluFJCKSidICx8ciO85XgH3Ak8k=
+gopkg.in/yaml.v2 v2.0.0-20160301204022-a83829b6f129/go.mod h1:JAlM8MvJe8wmxCU4Bli9HhUf9+ttbYbLASfIpnQbh74=
