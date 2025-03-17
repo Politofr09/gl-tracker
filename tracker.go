@@ -1,24 +1,34 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"github.com/joshuaferrara/go-satellite"
 
 	"gl-tracker/internal/tle"
+	"gl-tracker/internal/ui"
 )
 
-func selectSatellite(selectedSatellite string, satellitesList map[string][2]string, scale float64, orbitPath []rl.Vector3, orbitPoints int) satellite.Satellite {
-	tleLine1 := satellitesList[selectedSatellite][0]
-	tleLine2 := satellitesList[selectedSatellite][1]
+func selectSatellite(selectedSatellite string, satellitesList map[string][2]string, scale float64, orbitPath []rl.Vector3, orbitPoints int) (satellite.Satellite, error) {
+	// Check if selectedSatellite is valid
+	actualName := strings.ToUpper(selectedSatellite)
+
+	if _, exists := satellitesList[actualName]; !exists {
+		return satellite.Satellite{}, errors.New("Can't find satellite " + actualName)
+	}
+	
+	tleLine1 := satellitesList[actualName][0]
+	tleLine2 := satellitesList[actualName][1]
 
 	// Parse the TLE data into a Satellite object
 	sat := satellite.TLEToSat(tleLine1, tleLine2, satellite.GravityWGS84)
 	computeOrbitPath(sat, scale, orbitPath[:], orbitPoints)
-	rl.SetWindowTitle(selectedSatellite)
-	return sat
+	rl.SetWindowTitle("Tracking " + actualName)
+	return sat, nil
 }
 
 func getSatellitePosition(sat satellite.Satellite, time time.Time, scale float64) rl.Vector3 {
@@ -64,11 +74,11 @@ func main() {
 	rl.MaximizeWindow()
 	defer rl.CloseWindow()
 
-	selectedSatellite := "NOAA 19"	
+	selectedSatellite := "NOAA 19"
+	inputText 		  := ""
 	const orbitPoints = 110
 	var orbitPath [orbitPoints]rl.Vector3
-	sat := selectSatellite(selectedSatellite, satellites, scale, orbitPath[:], orbitPoints)
-
+	sat, _ := selectSatellite(selectedSatellite, satellites, scale, orbitPath[:], orbitPoints)
 
 	earth_model := rl.LoadModel("res/Earth_1_12756.glb")
 	satellite_model := rl.LoadModel("res/satellite.glb")
@@ -95,7 +105,12 @@ func main() {
 
 		// Testing how to switch to another satellite
 		if rl.IsKeyPressed(rl.KeyF2) {
-			sat = selectSatellite("NOAA 15", satellites, scale, orbitPath[:], orbitPoints)
+			tempSat, err := selectSatellite("NOAA 15", satellites, scale, orbitPath[:], orbitPoints)
+			if (err != nil) {
+				fmt.Println("Error: ", err)
+			} else {
+				sat = tempSat
+			}
 		}
 
 		if followSatellite {
@@ -136,8 +151,21 @@ func main() {
 
 		rl.EndMode3D()
 
+		// Render the UI
+
 		text := now.String()
 		rl.DrawText(text, 10, 10, 20, rl.White)
+
+		ui.InputText("Select a satellite", 10, 100, 400, 50, &inputText, 20)
+		if inputText != selectedSatellite {
+			selectedSatellite = inputText
+			tempSat, err := selectSatellite(selectedSatellite, satellites, scale, orbitPath[:], orbitPoints)
+			if (err != nil) {
+				fmt.Println("Error: ", err)
+			} else {
+				sat = tempSat
+			}
+		}
 
 		rl.EndDrawing()
 	}
