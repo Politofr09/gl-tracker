@@ -2,8 +2,9 @@
 Tiny 3D satellite tracking program written in go + raylib bindings. 
 
 ![Satellite Tracking](media/Screenshot1.png)
+![Satellite Tracking](media/Screenshot2.png)
 
-Usage:
+# Usage:
 
 run 
 
