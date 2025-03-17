@@ -1,4 +1,4 @@
-module gl-tracker/tracker
+module gl-tracker
 
 go 1.24.1
 

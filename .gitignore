@@ -1,3 +1,6 @@
 build/tracker
 build/res/*
 build/tracker.exe
+build/weather.txt
+build/weather.txt.timestamp
+.gitignore
