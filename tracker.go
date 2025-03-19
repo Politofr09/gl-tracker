@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -20,7 +21,7 @@ func selectSatellite(selectedSatellite string, satellitesList map[string][2]stri
 	if _, exists := satellitesList[actualName]; !exists {
 		return satellite.Satellite{}, errors.New("Can't find satellite " + actualName)
 	}
-	
+
 	tleLine1 := satellitesList[actualName][0]
 	tleLine2 := satellitesList[actualName][1]
 
@@ -75,7 +76,7 @@ func main() {
 	defer rl.CloseWindow()
 
 	selectedSatellite := "NOAA 19"
-	inputText 		  := ""
+	inputText := ""
 	const orbitPoints = 110
 	var orbitPath [orbitPoints]rl.Vector3
 	sat, _ := selectSatellite(selectedSatellite, satellites, scale, orbitPath[:], orbitPoints)
@@ -101,16 +102,6 @@ func main() {
 			followSatellite = !followSatellite
 			// Reset the camera position
 			camera.Position = rl.NewVector3(-10.0, 8.0, -10.0)
-		}
-
-		// Testing how to switch to another satellite
-		if rl.IsKeyPressed(rl.KeyF2) {
-			tempSat, err := selectSatellite("NOAA 15", satellites, scale, orbitPath[:], orbitPoints)
-			if (err != nil) {
-				fmt.Println("Error: ", err)
-			} else {
-				sat = tempSat
-			}
 		}
 
 		if followSatellite {
@@ -152,18 +143,35 @@ func main() {
 		rl.EndMode3D()
 
 		// Render the UI
+		date_text := now.String()
+		rl.DrawText(date_text, 10, 10, 20, rl.Yellow)
 
-		text := now.String()
-		rl.DrawText(text, 10, 10, 20, rl.White)
+		help_text := "F1: Follow satellite"
+		rl.DrawText(help_text, int32(rl.GetScreenWidth())-rl.MeasureText(help_text, 20)-10, 10, 20, rl.Yellow)
 
-		ui.InputText("Select a satellite", 10, 100, 400, 50, &inputText, 20)
+		ui.InputText("Select a satellite", 10, 80, 400, 50, &inputText, 20)
 		if inputText != selectedSatellite {
 			selectedSatellite = inputText
 			tempSat, err := selectSatellite(selectedSatellite, satellites, scale, orbitPath[:], orbitPoints)
-			if (err != nil) {
-				fmt.Println("Error: ", err)
-			} else {
+			if err == nil {
 				sat = tempSat
+			} // Don't need to handle the error here
+
+		}
+
+		if inputText != "" {
+			var slices []string
+			for possible_satellite := range satellites {
+				if strings.Contains(possible_satellite, strings.ToUpper(inputText)) {
+					slices = append(slices, possible_satellite)
+				}
+			}
+
+			// In go maps do not guarantee order, so we need to sort the slices alphabetically
+			sort.Strings(slices)
+
+			for i, slice := range slices {
+				rl.DrawText(slice, 10, 140+int32(i)*20, 20, rl.White)
 			}
 		}
 

@@ -4,22 +4,30 @@ import (
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
+var cursorTimer int32
+var focus bool
+
 func InputText(label string, x int32, y int32, width int32, height int32, buf *string, maxCharacters uint) {
 	textBox := rl.Rectangle{X: float32(x), Y: float32(y), Width: float32(width), Height: float32(height)}
 
 	letterCount := len(*buf)
-	mouseOnText := false
-
-	if rl.CheckCollisionPointRec(rl.GetMousePosition(), textBox) {
-		mouseOnText = true
-	} else {
-		mouseOnText = false
-	}
+	mouseOnText := rl.CheckCollisionPointRec(rl.GetMousePosition(), textBox)
 
 	if mouseOnText {
-		// Set the window's cursor to the I-Beam for text input
 		rl.SetMouseCursor(rl.MouseCursorIBeam)
 
+		if rl.IsMouseButtonPressed(rl.MouseLeftButton) {
+			focus = true
+		}
+	} else {
+		rl.SetMouseCursor(rl.MouseCursorDefault)
+
+		if rl.IsMouseButtonPressed(rl.MouseLeftButton) {
+			focus = false
+		}
+	}
+
+	if focus {
 		// Get the character pressed (unicode character)
 		key := rl.GetCharPressed()
 
@@ -38,22 +46,23 @@ func InputText(label string, x int32, y int32, width int32, height int32, buf *s
 			letterCount--
 			*buf = (*buf)[:letterCount] // Remove last character
 		}
-	} else {
-		rl.SetMouseCursor(rl.MouseCursorDefault)
 	}
 
 	rl.DrawText(label, x, y-20, 20, rl.DarkGray)
 	rl.DrawRectangleRec(textBox, rl.LightGray)
 
 	// Highlight the input box if the mouse is over it
-	if mouseOnText {
-		rl.DrawRectangleLines(int32(textBox.X), int32(textBox.Y), int32(textBox.Width), int32(textBox.Height), rl.Red)
-	} else {
-		rl.DrawRectangleLines(int32(textBox.X), int32(textBox.Y), int32(textBox.Width), int32(textBox.Height), rl.DarkGray)
+	if focus {
+		rl.DrawRectangleLinesEx(textBox, 2.0, rl.Yellow)
+	}
+
+	cursorTimer++
+	if focus && letterCount < int(maxCharacters) {
+		if (cursorTimer/20)%2 == 0 {
+			rl.DrawText("|", int32(textBox.X)+10+rl.MeasureText(*buf, 40), int32(textBox.Y)+8, 40, rl.DarkBlue)
+		}
 	}
 
 	// Draw the text entered so far
-	rl.DrawText(*buf, int32(textBox.X)+5, int32(textBox.Y)+8, 40, rl.Maroon)
-
-
+	rl.DrawText(*buf, int32(textBox.X)+5, int32(textBox.Y)+8, 40, rl.DarkBlue)
 }
