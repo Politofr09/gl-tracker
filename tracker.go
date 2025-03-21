@@ -83,16 +83,17 @@ func main() {
 
 
 	// Load shaders
-	pointShader := rl.LoadShader("res/point.vs", "res/point.fs")
-	timeLoc := rl.GetShaderLocation(pointShader, "time")
-	defer rl.UnloadShader(pointShader)
+	crtShader := rl.LoadShader("res/crt.vs", "res/crt.fs")
+	timeLoc := rl.GetShaderLocation(crtShader, "time")
+	resLoc := rl.GetShaderLocation(crtShader, "resolution")
+	defer rl.UnloadShader(crtShader)
 
 	earth_model := rl.LoadModel("res/Earth_1_12756.glb")
-	earth_model.GetMaterials()[1].Shader = pointShader
 	defer rl.UnloadModel(earth_model)
 	satellite_model := rl.LoadModel("res/satellite.glb")
 	defer rl.UnloadModel(satellite_model)
 
+	renderTarget := rl.LoadRenderTexture(int32(rl.GetScreenWidth()), int32(rl.GetScreenHeight()))
 	camera := rl.Camera{}
 	camera.Position = rl.NewVector3(-10.0, 8.0, -10.0)
 	camera.Target = rl.NewVector3(0.0, 0.0, 0.0)
@@ -104,7 +105,8 @@ func main() {
 
 	for !rl.WindowShouldClose() {
 		now := time.Now().UTC()
-		rl.SetShaderValue(pointShader, timeLoc, []float32{float32(rl.GetTime())}, rl.ShaderUniformFloat)
+		rl.SetShaderValue(crtShader, timeLoc, []float32{float32(rl.GetTime())}, rl.ShaderUniformFloat)
+		rl.SetShaderValue(crtShader, resLoc, []float32{float32(rl.GetScreenWidth()), float32(rl.GetScreenHeight())}, rl.ShaderUniformVec2)
 
 		satPos := getSatellitePosition(sat, now, scale)
 
@@ -126,7 +128,8 @@ func main() {
 			rl.UpdateCamera(&camera, rl.CameraOrbital)
 		}
 
-		rl.BeginDrawing()
+		rl.BeginTextureMode(renderTarget)
+
 		rl.ClearBackground(rl.Black)
 
 		rl.BeginMode3D(camera)
@@ -151,6 +154,20 @@ func main() {
 
 		rl.EndMode3D()
 
+		rl.EndTextureMode()
+		
+		rl.BeginDrawing()
+		rl.BeginShaderMode(crtShader)
+
+		rl.DrawTextureRec(
+			renderTarget.Texture, 
+			rl.NewRectangle(0, 0, float32(rl.GetScreenWidth()), -float32(rl.GetScreenHeight())), // Flip vertically
+			rl.NewVector2(0, 0), // Adjust position accordingly
+			rl.White,
+		)
+		rl.EndShaderMode()
+
+		
 		// Render the UI
 		date_text := now.String()
 		rl.DrawText(date_text, 10, 10, 20, rl.Yellow)
