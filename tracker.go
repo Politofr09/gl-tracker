@@ -81,8 +81,17 @@ func main() {
 	var orbitPath [orbitPoints]rl.Vector3
 	sat, _ := selectSatellite(selectedSatellite, satellites, scale, orbitPath[:], orbitPoints)
 
+
+	// Load shaders
+	pointShader := rl.LoadShader("res/point.vs", "res/point.fs")
+	timeLoc := rl.GetShaderLocation(pointShader, "time")
+	defer rl.UnloadShader(pointShader)
+
 	earth_model := rl.LoadModel("res/Earth_1_12756.glb")
+	earth_model.GetMaterials()[1].Shader = pointShader
+	defer rl.UnloadModel(earth_model)
 	satellite_model := rl.LoadModel("res/satellite.glb")
+	defer rl.UnloadModel(satellite_model)
 
 	camera := rl.Camera{}
 	camera.Position = rl.NewVector3(-10.0, 8.0, -10.0)
@@ -95,6 +104,7 @@ func main() {
 
 	for !rl.WindowShouldClose() {
 		now := time.Now().UTC()
+		rl.SetShaderValue(pointShader, timeLoc, []float32{float32(rl.GetTime())}, rl.ShaderUniformFloat)
 
 		satPos := getSatellitePosition(sat, now, scale)
 
@@ -136,7 +146,6 @@ func main() {
 			rl.DrawLine3D(orbitPath[i], orbitPath[i+1], rl.SkyBlue)
 		}
 
-		// Draw the satellite position as a red sphere
 		rl.DrawModelEx(satellite_model, satPos, rl.NewVector3(0, 0, 0), 0.0, rl.NewVector3(0.0001, 0.0001, 0.0001), rl.White)
 		rl.DrawLine3D(satPos, rl.NewVector3(0, 0, 0), rl.Blue)
 
