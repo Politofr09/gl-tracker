@@ -82,6 +82,7 @@ func main() {
 	sat, _ := selectSatellite(selectedSatellite, satellites, scale, orbitPath[:], orbitPoints)
 
 
+
 	// Load shaders
 	crtShader := rl.LoadShader("res/crt.vs", "res/crt.fs")
 	timeLoc := rl.GetShaderLocation(crtShader, "time")
@@ -104,6 +105,13 @@ func main() {
 	rl.SetTargetFPS(60)
 
 	for !rl.WindowShouldClose() {
+		// Recreate the render texture if the window is resized
+		if rl.IsWindowResized() {
+			rl.UnloadRenderTexture(renderTarget);
+			renderTarget = rl.LoadRenderTexture(int32(rl.GetScreenWidth()), int32(rl.GetScreenHeight()))
+
+		}
+
 		now := time.Now().UTC()
 		rl.SetShaderValue(crtShader, timeLoc, []float32{float32(rl.GetTime())}, rl.ShaderUniformFloat)
 		rl.SetShaderValue(crtShader, resLoc, []float32{float32(rl.GetScreenWidth()), float32(rl.GetScreenHeight())}, rl.ShaderUniformVec2)
