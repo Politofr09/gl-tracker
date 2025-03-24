@@ -12,23 +12,22 @@ import (
 
 	"gl-tracker/internal/tle"
 	"gl-tracker/internal/ui"
+
+	"gopkg.in/ini.v1"
 )
 
 func selectSatellite(selectedSatellite string, satellitesList map[string][2]string, scale float64, orbitPath []rl.Vector3, orbitPoints int) (satellite.Satellite, error) {
-	// Check if selectedSatellite is valid
-	actualName := strings.ToUpper(selectedSatellite)
-
-	if _, exists := satellitesList[actualName]; !exists {
-		return satellite.Satellite{}, errors.New("Can't find satellite " + actualName)
+	if _, exists := satellitesList[selectedSatellite]; !exists {
+		return satellite.Satellite{}, errors.New("Can't find satellite " + selectedSatellite)
 	}
 
-	tleLine1 := satellitesList[actualName][0]
-	tleLine2 := satellitesList[actualName][1]
+	tleLine1 := satellitesList[selectedSatellite][0]
+	tleLine2 := satellitesList[selectedSatellite][1]
 
 	// Parse the TLE data into a Satellite object
 	sat := satellite.TLEToSat(tleLine1, tleLine2, satellite.GravityWGS84)
 	computeOrbitPath(sat, scale, orbitPath[:], orbitPoints)
-	rl.SetWindowTitle("Tracking " + actualName)
+	rl.SetWindowTitle("Tracking " + selectedSatellite)
 	return sat, nil
 }
 
@@ -54,11 +53,18 @@ func computeOrbitPath(sat satellite.Satellite, scale float64, orbitPath []rl.Vec
 }
 
 func main() {
+	// Load config
+	cfg, err := ini.Load("res/config.ini")
+	if err != nil {
+		fmt.Println("Error reading config file: %v", err)
+		return
+	}
+
 	const scale = 1050.0
 	followSatellite := false
 	var zoom float32 = 1.0
 
-	err := tle.FetchTLEs()
+	err = tle.FetchTLEs()
 	if err != nil {
 		fmt.Println("Error fetching TLE data: ", err)
 		return
@@ -75,12 +81,17 @@ func main() {
 	rl.MaximizeWindow()
 	defer rl.CloseWindow()
 
-	selectedSatellite := "NOAA 19"
+	// selectedSatellite := "NOAA19"
+	selectedSatellite := cfg.Section("Tracker").Key("satellite").String()
+	fmt.Println("Selected satellite: ", selectedSatellite)
+
 	inputText := ""
 	const orbitPoints = 110
 	var orbitPath [orbitPoints]rl.Vector3
-	sat, _ := selectSatellite(selectedSatellite, satellites, scale, orbitPath[:], orbitPoints)
-
+	sat, err := selectSatellite(selectedSatellite, satellites, scale, orbitPath[:], orbitPoints)
+	if err != nil {
+		fmt.Println("Problem selecting satellite: %v", err)
+	}
 
 
 	// Load shaders
@@ -163,7 +174,7 @@ func main() {
 		rl.EndMode3D()
 
 		rl.EndTextureMode()
-		
+
 		rl.BeginDrawing()
 		rl.BeginShaderMode(crtShader)
 
@@ -184,6 +195,7 @@ func main() {
 		rl.DrawText(help_text, int32(rl.GetScreenWidth())-rl.MeasureText(help_text, 20)-10, 10, 20, rl.Yellow)
 
 		ui.InputText("Select a satellite", 10, 80, 400, 50, &inputText, 20)
+		inputText = strings.ToUpper(inputText)
 		if inputText != selectedSatellite {
 			selectedSatellite = inputText
 			tempSat, err := selectSatellite(selectedSatellite, satellites, scale, orbitPath[:], orbitPoints)

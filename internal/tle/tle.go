@@ -95,7 +95,7 @@ func LoadTLEs() (map[string][2]string, error) {
 			name, line1, line2 = "", "", ""
 		}
 	}
-	
+
 	return satellites, nil
 }
 
