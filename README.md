@@ -21,3 +21,10 @@ run
 ```
 
 Press ``F1`` to switch views
+
+# Features
+- Real time TLE fetching and caching
+- Orbit visualisation
+- Configurable with a config.ini file
+- Interactive UI & Camera controls
+- Cool sci-fi CRT shader
