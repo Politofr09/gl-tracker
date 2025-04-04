@@ -86,8 +86,9 @@ func main() {
 	defer rl.CloseWindow()
 
 	selectedSatellite := cfg.Section("Tracker").Key("satellite").String()
+	fmt.Println("[Config] Selected satellite:", selectedSatellite)
 
-	// Parse lat/long from config
+	// Parse lat/long from
 	parts := strings.Split(cfg.Section("Tracker").Key("ground_station").String(), ", ")
 	if len(parts) < 2 {
 		fmt.Printf("invalid ground station format")
@@ -105,14 +106,14 @@ func main() {
 		fmt.Printf("invalid longitude: %v", err)
 		return
 	}
-	fmt.Println("[Config] Ground station", groundLon, groundLat)
+	fmt.Println("[Config] Ground station:", groundLon, groundLat)
 
 	now := time.Now().UTC()
 
 	inputText := ""
 	orbitPoints := cfg.Section("Tracker").Key("orbit_duration").MustInt(100)
 
-	fmt.Println("[Config] Orbit points", orbitPoints)
+	fmt.Println("[Config] Orbit points:", orbitPoints)
 
 	var orbitPath = make([]rl.Vector3, orbitPoints)
 	sat, err := selectSatellite(selectedSatellite, satellites, scale, now, orbitPath[:], orbitPoints)
@@ -126,13 +127,17 @@ func main() {
 	resLoc := rl.GetShaderLocation(crtShader, "resolution")
 	defer rl.UnloadShader(crtShader)
 
-	earth_model := rl.LoadModel("res/Earth_1_12756.glb")
-	defer rl.UnloadModel(earth_model)
-	satellite_model := rl.LoadModel("res/satellite.glb")
-	defer rl.UnloadModel(satellite_model)
+	earthModel := rl.LoadModel("res/Earth_1_12756.glb")
+	defer rl.UnloadModel(earthModel)
+	satelliteModel := rl.LoadModel("res/satellite.glb")
+	defer rl.UnloadModel(satelliteModel)
 
 	bilboardTexture := rl.LoadTexture("res/location-bilboard-map.png")
 	defer rl.UnloadTexture(bilboardTexture)
+
+	ui.HackerFont = rl.LoadFontEx("res/ShareTechMono-Regular.ttf", 40, nil)
+	rl.SetTextureFilter(ui.HackerFont.Texture, rl.FilterBilinear)
+	defer rl.UnloadFont(ui.HackerFont)
 	
 	renderTarget := rl.LoadRenderTexture(int32(rl.GetScreenWidth()), int32(rl.GetScreenHeight()))
 	camera := rl.Camera{}
@@ -189,15 +194,15 @@ func main() {
 
 		rl.DrawGrid(50, 10)
 
-		rl.DrawModelEx(earth_model, rl.NewVector3(0, 0, 0), rl.NewVector3(0, 1, 0), 180, rl.NewVector3(0.01, 0.01, 0.01), rl.White)
+		rl.DrawModelEx(earthModel, rl.NewVector3(0, 0, 0), rl.NewVector3(0, 1, 0), 180, rl.NewVector3(0.01, 0.01, 0.01), rl.White)
 
 		// Draw orbit
 		for i := 0; i < orbitPoints-1; i++ {
-			rl.DrawLine3D(orbitPath[i], orbitPath[i+1], rl.SkyBlue)
+			rl.DrawLine3D(orbitPath[i], orbitPath[i+1], ui.GREEN_HACKER_COLOR)
 		}
 
-		rl.DrawModelEx(satellite_model, satPos, rl.NewVector3(0, 0, 0), 0.0, rl.NewVector3(0.0001, 0.0001, 0.0001), rl.White)
-		rl.DrawLine3D(satPos, rl.NewVector3(0, 0, 0), rl.Blue)
+		rl.DrawModelEx(satelliteModel, satPos, rl.NewVector3(0, 0, 0), 0.0, rl.NewVector3(0.0001, 0.0001, 0.0001), rl.White)
+		rl.DrawLine3D(satPos, rl.NewVector3(0, 0, 0), ui.GREEN_HACKER_COLOR)
 
 		// Draw ground station
 		groundStationECI := satellite.LLAToECI(satellite.LatLong{Latitude: groundLat * satellite.DEG2RAD, Longitude: groundLon * satellite.DEG2RAD}, 0.0, satellite.JDay(now.Year(), int(now.Month()), now.Day(), now.Hour(), now.Minute(), now.Second()))
@@ -206,7 +211,7 @@ func main() {
 		rotationMatrix := rl.MatrixRotateY(rl.Deg2rad * 90)
 		groundStationRotated := rl.Vector3Transform(rl.NewVector3(float32(groundStation.X), float32(groundStation.Z), -float32(groundStation.Y)), rotationMatrix)
 		// rl.DrawSphere(rl.NewVector3(groundStationRotated.X/1300, groundStationRotated.Y/1300, groundStationRotated.Z/1300), 0.1, rl.White)
-		rl.DrawBillboard(camera, bilboardTexture, rl.NewVector3(groundStationRotated.X/1260, groundStationRotated.Y/1260+0.1, groundStationRotated.Z/1260), 0.5, rl.White)
+		rl.DrawBillboard(camera, bilboardTexture, rl.NewVector3(groundStationRotated.X/1260, groundStationRotated.Y/1260+0.1, groundStationRotated.Z/1260), 0.5, ui.GREEN_HACKER_COLOR)
 
 		rl.EndMode3D()
 
@@ -224,21 +229,23 @@ func main() {
 		rl.EndShaderMode()
 
 		// Render the UI
-		date_text := now.String()
-		rl.DrawText(date_text, 10, 10, 20, rl.Yellow)
+		dateText := now.String()
+		rl.DrawTextEx(ui.HackerFont, dateText, rl.NewVector2(10, 10), 20, 1.0, ui.GREEN_HACKER_COLOR)
 
-		help_text := "F1: Follow satellite"
-		rl.DrawText(help_text, int32(rl.GetScreenWidth())-rl.MeasureText(help_text, 20)-10, 10, 20, rl.Yellow)
+		helpText := "F1: Follow satellite"
+		if followSatellite {
+			helpText = "F1: Globe view"
+		}
+		rl.DrawTextEx(ui.HackerFont, helpText, rl.NewVector2(float32(rl.GetScreenWidth()) - rl.MeasureTextEx(ui.HackerFont, helpText, 20, 1.0).X - 10, 10), 20, 1.0, ui.GREEN_HACKER_COLOR)
 
 		ui.InputText("Select a satellite", 10, 80, 400, 50, &inputText, 20)
 		inputText = strings.ToUpper(inputText)
-		if inputText != selectedSatellite {
-			selectedSatellite = inputText
-			tempSat, err := selectSatellite(selectedSatellite, satellites, scale, now, orbitPath[:], orbitPoints)
+		if inputText != selectedSatellite && inputText != "" {
+			tempSat, err := selectSatellite(inputText, satellites, scale, now, orbitPath[:], orbitPoints)
 			if err == nil {
+				selectedSatellite = inputText
 				sat = tempSat
 			} // Don't need to handle the error here
-
 		}
 
 		if inputText != "" {
@@ -253,9 +260,13 @@ func main() {
 			sort.Strings(slices)
 
 			for i, slice := range slices {
-				rl.DrawText(slice, 10, 140+int32(i)*20, 20, rl.White)
+				rl.DrawTextEx(ui.HackerFont, slice, rl.NewVector2(10, 140+float32(i)*20), 20, 1.0, rl.White)
 			}
 		}
+
+		// Draw text for the selected satellite
+		satNamePos := rl.GetWorldToScreen(satPos, camera)
+		rl.DrawTextEx(ui.HackerFont, selectedSatellite, rl.NewVector2(satNamePos.X-rl.MeasureTextEx(ui.HackerFont, selectedSatellite, 20, 1.0).X/2, satNamePos.Y), 20, 1.0, ui.GREEN_HACKER_COLOR)
 
 		rl.EndDrawing()
 	}

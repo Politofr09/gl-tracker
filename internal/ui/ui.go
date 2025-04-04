@@ -4,6 +4,10 @@ import (
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
+
+var GREEN_HACKER_COLOR = rl.NewColor(30, 255, 60, 255)
+var HackerFont rl.Font
+
 var cursorTimer int32
 var focus bool
 
@@ -48,21 +52,24 @@ func InputText(label string, x int32, y int32, width int32, height int32, buf *s
 		}
 	}
 
-	rl.DrawText(label, x, y-20, 20, rl.DarkGray)
+	rl.DrawTextEx(HackerFont, label, rl.NewVector2(textBox.X, textBox.Y-20), 20, 1.0, rl.LightGray)
 	rl.DrawRectangleRec(textBox, rl.LightGray)
 
 	// Highlight the input box if the mouse is over it
 	if focus {
-		rl.DrawRectangleLinesEx(textBox, 2.0, rl.Yellow)
+		rl.DrawRectangleLinesEx(textBox, 2.0, GREEN_HACKER_COLOR)
 	}
 
 	cursorTimer++
 	if focus && letterCount < int(maxCharacters) {
 		if (cursorTimer/20)%2 == 0 {
-			rl.DrawText("|", int32(textBox.X)+10+rl.MeasureText(*buf, 40), int32(textBox.Y)+8, 40, rl.DarkBlue)
+			rl.DrawTextEx(HackerFont, "_", 
+			rl.NewVector2(textBox.X+10.0+rl.MeasureTextEx(HackerFont, *buf, 40, 1.0).X, textBox.Y+8), 
+			40, 1.0, rl.DarkBlue)
 		}
 	}
 
 	// Draw the text entered so far
-	rl.DrawText(*buf, int32(textBox.X)+5, int32(textBox.Y)+8, 40, rl.DarkBlue)
+	// rl.DrawText(*buf, int32(textBox.X)+5, int32(textBox.Y)+8, 40, rl.DarkBlue)
+	rl.DrawTextEx(HackerFont, *buf, rl.NewVector2(textBox.X+5, textBox.Y+8), 40, 1.0, rl.DarkBlue)
 }
