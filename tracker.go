@@ -41,7 +41,7 @@ func getSatellitePosition(sat satellite.Satellite, time time.Time, scale float64
 }
 
 func computeOrbitPath(sat satellite.Satellite, t time.Time, scale float64, orbitPath []rl.Vector3, orbitPoints int) {
-	
+
 	if orbitPoints <= 10 {
 		t = t.Add(-time.Duration(orbitPoints) * time.Minute / 2) // Remove the half
 	} else {
@@ -53,7 +53,6 @@ func computeOrbitPath(sat satellite.Satellite, t time.Time, scale float64, orbit
 		orbitPath[i] = getSatellitePosition(sat, futureTime, scale)
 	}
 }
-
 
 func main() {
 	// Load config
@@ -91,19 +90,19 @@ func main() {
 	// Parse lat/long from
 	parts := strings.Split(cfg.Section("Tracker").Key("ground_station").String(), ", ")
 	if len(parts) < 2 {
-		fmt.Printf("invalid ground station format")
+		fmt.Printf("Invalid ground station format")
 		return
 	}
 
 	groundLat, err := strconv.ParseFloat(strings.TrimSpace(parts[0]), 64)
 	if err != nil {
-		fmt.Printf("invalid latitude: %v", err)
+		fmt.Printf("Invalid latitude: %v", err)
 		return
 	}
 
 	groundLon, err := strconv.ParseFloat(strings.TrimSpace(parts[1]), 64)
 	if err != nil {
-		fmt.Printf("invalid longitude: %v", err)
+		fmt.Printf("Invalid longitude: %v", err)
 		return
 	}
 	fmt.Println("[Config] Ground station:", groundLon, groundLat)
@@ -112,8 +111,20 @@ func main() {
 
 	inputText := ""
 	orbitPoints := cfg.Section("Tracker").Key("orbit_duration").MustInt(100)
+	orbitStyle := cfg.Section("Tracker").Key("orbit_style").String()
+	fmt.Println("[Config] Orbit style:", orbitStyle)
+	var drawOrbitAsPoint bool
+	if orbitStyle == "Points" {
+		drawOrbitAsPoint = true
+	} else if orbitStyle == "Lines" {
+		drawOrbitAsPoint = false
+	} else {
+		fmt.Printf("Invalid orbit style: %v", orbitStyle)
+		fmt.Println("Expected 'Points' or 'Lines'")
+		return
+	}
 
-	fmt.Println("[Config] Orbit points:", orbitPoints)
+	fmt.Println("[Config] Orbit duration in minutes:", orbitPoints)
 
 	var orbitPath = make([]rl.Vector3, orbitPoints)
 	sat, err := selectSatellite(selectedSatellite, satellites, scale, now, orbitPath[:], orbitPoints)
@@ -138,7 +149,7 @@ func main() {
 	ui.HackerFont = rl.LoadFontEx("res/ShareTechMono-Regular.ttf", 40, nil)
 	rl.SetTextureFilter(ui.HackerFont.Texture, rl.FilterBilinear)
 	defer rl.UnloadFont(ui.HackerFont)
-	
+
 	renderTarget := rl.LoadRenderTexture(int32(rl.GetScreenWidth()), int32(rl.GetScreenHeight()))
 	camera := rl.Camera{}
 	camera.Position = rl.NewVector3(-10.0, 8.0, -10.0)
@@ -155,7 +166,6 @@ func main() {
 		now = time.Now().UTC()
 
 		computeOrbitPath(sat, now, scale, orbitPath[:], orbitPoints)
-		
 
 		// Recreate the render texture if the window is resized
 		if rl.IsWindowResized() {
@@ -197,10 +207,16 @@ func main() {
 		rl.DrawModelEx(earthModel, rl.NewVector3(0, 0, 0), rl.NewVector3(0, 1, 0), 180, rl.NewVector3(0.01, 0.01, 0.01), rl.White)
 
 		// Draw orbit
-		for i := 0; i < orbitPoints-1; i++ {
-			rl.DrawLine3D(orbitPath[i], orbitPath[i+1], ui.GREEN_HACKER_COLOR)
+		if drawOrbitAsPoint {
+			for i := 0; i < orbitPoints; i++ {
+				rl.DrawPoint3D(orbitPath[i], ui.GREEN_HACKER_COLOR)
+			}
+		} else {
+			for i := 0; i < orbitPoints-1; i++ {
+				rl.DrawLine3D(orbitPath[i], orbitPath[i+1], ui.GREEN_HACKER_COLOR)
+				// rl.DrawPoint3D(orbitPath[i], ui.GREEN_HACKER_COLOR)
+			}
 		}
-
 		rl.DrawModelEx(satelliteModel, satPos, rl.NewVector3(0, 0, 0), 0.0, rl.NewVector3(0.0001, 0.0001, 0.0001), rl.White)
 		rl.DrawLine3D(satPos, rl.NewVector3(0, 0, 0), ui.GREEN_HACKER_COLOR)
 
@@ -236,7 +252,7 @@ func main() {
 		if followSatellite {
 			helpText = "F1: Globe view"
 		}
-		rl.DrawTextEx(ui.HackerFont, helpText, rl.NewVector2(float32(rl.GetScreenWidth()) - rl.MeasureTextEx(ui.HackerFont, helpText, 20, 1.0).X - 10, 10), 20, 1.0, ui.GREEN_HACKER_COLOR)
+		rl.DrawTextEx(ui.HackerFont, helpText, rl.NewVector2(float32(rl.GetScreenWidth())-rl.MeasureTextEx(ui.HackerFont, helpText, 20, 1.0).X-10, 10), 20, 1.0, ui.GREEN_HACKER_COLOR)
 
 		ui.InputText("Select a satellite", 10, 80, 400, 50, &inputText, 20)
 		inputText = strings.ToUpper(inputText)
