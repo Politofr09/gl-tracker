@@ -66,7 +66,7 @@ func main() {
 	followSatellite := false
 	var zoom float32 = 1.0
 
-	err = tle.FetchTLEs()
+	err = tle.FetchTLEs(cfg.Section("General").Key("tle_url").String())
 	if err != nil {
 		fmt.Println("Error fetching TLE data: ", err)
 		return
@@ -150,6 +150,9 @@ func main() {
 	rl.SetTextureFilter(ui.HackerFont.Texture, rl.FilterBilinear)
 	defer rl.UnloadFont(ui.HackerFont)
 
+	hexAccent := cfg.Section("Visuals").Key("accent_color").String()
+	ui.ACCENT_COLOR = ui.HexStringToColor(hexAccent)
+
 	renderTarget := rl.LoadRenderTexture(int32(rl.GetScreenWidth()), int32(rl.GetScreenHeight()))
 	camera := rl.Camera{}
 	camera.Position = rl.NewVector3(-10.0, 8.0, -10.0)
@@ -209,16 +212,16 @@ func main() {
 		// Draw orbit
 		if drawOrbitAsPoint {
 			for i := 0; i < orbitPoints; i++ {
-				rl.DrawPoint3D(orbitPath[i], ui.GREEN_HACKER_COLOR)
+				rl.DrawPoint3D(orbitPath[i], ui.ACCENT_COLOR)
 			}
 		} else {
 			for i := 0; i < orbitPoints-1; i++ {
-				rl.DrawLine3D(orbitPath[i], orbitPath[i+1], ui.GREEN_HACKER_COLOR)
-				// rl.DrawPoint3D(orbitPath[i], ui.GREEN_HACKER_COLOR)
+				rl.DrawLine3D(orbitPath[i], orbitPath[i+1], ui.ACCENT_COLOR)
+				// rl.DrawPoint3D(orbitPath[i], ui.ACCENT_COLOR)
 			}
 		}
 		rl.DrawModelEx(satelliteModel, satPos, rl.NewVector3(0, 0, 0), 0.0, rl.NewVector3(0.0001, 0.0001, 0.0001), rl.White)
-		rl.DrawLine3D(satPos, rl.NewVector3(0, 0, 0), ui.GREEN_HACKER_COLOR)
+		rl.DrawLine3D(satPos, rl.NewVector3(0, 0, 0), ui.ACCENT_COLOR)
 
 		// Draw ground station
 		groundStationECI := satellite.LLAToECI(satellite.LatLong{Latitude: groundLat * satellite.DEG2RAD, Longitude: groundLon * satellite.DEG2RAD}, 0.0, satellite.JDay(now.Year(), int(now.Month()), now.Day(), now.Hour(), now.Minute(), now.Second()))
@@ -227,7 +230,7 @@ func main() {
 		rotationMatrix := rl.MatrixRotateY(rl.Deg2rad * 90)
 		groundStationRotated := rl.Vector3Transform(rl.NewVector3(float32(groundStation.X), float32(groundStation.Z), -float32(groundStation.Y)), rotationMatrix)
 		// rl.DrawSphere(rl.NewVector3(groundStationRotated.X/1300, groundStationRotated.Y/1300, groundStationRotated.Z/1300), 0.1, rl.White)
-		rl.DrawBillboard(camera, bilboardTexture, rl.NewVector3(groundStationRotated.X/1260, groundStationRotated.Y/1260+0.1, groundStationRotated.Z/1260), 0.5, ui.GREEN_HACKER_COLOR)
+		rl.DrawBillboard(camera, bilboardTexture, rl.NewVector3(groundStationRotated.X/1260, groundStationRotated.Y/1260+0.1, groundStationRotated.Z/1260), 0.5, ui.ACCENT_COLOR)
 
 		rl.EndMode3D()
 
@@ -246,13 +249,13 @@ func main() {
 
 		// Render the UI
 		dateText := now.String()
-		rl.DrawTextEx(ui.HackerFont, dateText, rl.NewVector2(10, 10), 20, 1.0, ui.GREEN_HACKER_COLOR)
+		rl.DrawTextEx(ui.HackerFont, dateText, rl.NewVector2(10, 10), 20, 1.0, ui.ACCENT_COLOR)
 
 		helpText := "F1: Follow satellite"
 		if followSatellite {
 			helpText = "F1: Globe view"
 		}
-		rl.DrawTextEx(ui.HackerFont, helpText, rl.NewVector2(float32(rl.GetScreenWidth())-rl.MeasureTextEx(ui.HackerFont, helpText, 20, 1.0).X-10, 10), 20, 1.0, ui.GREEN_HACKER_COLOR)
+		rl.DrawTextEx(ui.HackerFont, helpText, rl.NewVector2(float32(rl.GetScreenWidth())-rl.MeasureTextEx(ui.HackerFont, helpText, 20, 1.0).X-10, 10), 20, 1.0, ui.ACCENT_COLOR)
 
 		ui.InputText("Select a satellite", 10, 80, 400, 50, &inputText, 20)
 		inputText = strings.ToUpper(inputText)
@@ -282,7 +285,7 @@ func main() {
 
 		// Draw text for the selected satellite
 		satNamePos := rl.GetWorldToScreen(satPos, camera)
-		rl.DrawTextEx(ui.HackerFont, selectedSatellite, rl.NewVector2(satNamePos.X-rl.MeasureTextEx(ui.HackerFont, selectedSatellite, 20, 1.0).X/2, satNamePos.Y), 20, 1.0, ui.GREEN_HACKER_COLOR)
+		rl.DrawTextEx(ui.HackerFont, selectedSatellite, rl.NewVector2(satNamePos.X-rl.MeasureTextEx(ui.HackerFont, selectedSatellite, 20, 1.0).X/2, satNamePos.Y), 20, 1.0, ui.ACCENT_COLOR)
 
 		rl.EndDrawing()
 	}

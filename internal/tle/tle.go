@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	TLE_URL = "https://celestrak.org/NORAD/elements/weather.txt"
+	// TLE_URL = "https://celestrak.org/NORAD/elements/weather.txt"
 	TLE_FILE = "weather.txt"
 )
 
@@ -38,7 +38,7 @@ func CheckTimestamp() bool {
 	return time.Since(ts) < 24 * time.Hour
 }
 
-func FetchTLEs() error {
+func FetchTLEs(url string) error {
 	if CheckTimestamp() {
 		fmt.Println("Using cached TLE data.")
 		return nil
@@ -47,7 +47,7 @@ func FetchTLEs() error {
 	// We need to download + create timestamp
 	fmt.Println("Cached TLE data is missing or outdated. Fetching the latest TLE data...")
 
-	resp, err := http.Get(TLE_URL)
+	resp, err := http.Get(url)
 	if err != nil {
 		return err
 	}

@@ -1,19 +1,36 @@
 package ui
 
 import (
+	"strconv"
+	"strings"
+
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
-
-var GREEN_HACKER_COLOR = rl.NewColor(30, 255, 60, 255)
+// var GREEN_HACKER_COLOR = rl.NewColor(30, 255, 60, 255)
+var ACCENT_COLOR rl.Color
 var HackerFont rl.Font
 
 var cursorTimer int32
 var focus bool
 
+func HexStringToColor(hex string) rl.Color {
+    hex = strings.TrimPrefix(hex, "#")
+    if len(hex) != 8 {
+        return rl.White // fallback
+    }
+
+    r, _ := strconv.ParseUint(hex[0:2], 16, 8)
+    g, _ := strconv.ParseUint(hex[2:4], 16, 8)
+    b, _ := strconv.ParseUint(hex[4:6], 16, 8)
+    a, _ := strconv.ParseUint(hex[6:8], 16, 8)
+
+    return rl.NewColor(uint8(r), uint8(g), uint8(b), uint8(a))
+}
+
 func InputText(label string, x int32, y int32, width int32, height int32, buf *string, maxCharacters uint) {
 	textBox := rl.Rectangle{X: float32(x), Y: float32(y), Width: float32(width), Height: float32(height)}
-
+	
 	letterCount := len(*buf)
 	mouseOnText := rl.CheckCollisionPointRec(rl.GetMousePosition(), textBox)
 
@@ -57,7 +74,7 @@ func InputText(label string, x int32, y int32, width int32, height int32, buf *s
 
 	// Highlight the input box if the mouse is over it
 	if focus {
-		rl.DrawRectangleLinesEx(textBox, 2.0, GREEN_HACKER_COLOR)
+		rl.DrawRectangleLinesEx(textBox, 2.0, ACCENT_COLOR)
 	}
 
 	cursorTimer++
