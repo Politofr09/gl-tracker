@@ -117,6 +117,7 @@ func main() {
 	rl.SetTraceLogLevel(rl.LogNone)
 	rl.InitWindow(1280, 720, "No satellite selected yet")
 	rl.MaximizeWindow()
+	rl.SetWindowIcon(*rl.LoadImage("res/Logo256x256.png"))
 	defer rl.CloseWindow()
 
 	selectedSatellite := cfg.Section("Tracker").Key("satellite").String()
