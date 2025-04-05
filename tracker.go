@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"sort"
 	"strconv"
 	"strings"
@@ -11,8 +10,9 @@ import (
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"github.com/joshuaferrara/go-satellite"
 
-	"gl-tracker/internal/tle"
 	"gl-tracker/internal/ui"
+	"gl-tracker/internal/utils"
+	"gl-tracker/internal/tle"
 
 	"gopkg.in/ini.v1"
 )
@@ -54,11 +54,45 @@ func computeOrbitPath(sat satellite.Satellite, t time.Time, scale float64, orbit
 	}
 }
 
+func controlCamera(camera *rl.Camera) {
+	var rotation = rl.MatrixIdentity()
+
+	if rl.IsMouseButtonDown(rl.MouseLeftButton) {
+		rotation = rl.MatrixRotate(rl.NewVector3(0.0, 1.0, 0.0), -rl.GetMouseDelta().X*0.005)
+
+		right := rl.Vector3CrossProduct(camera.Up, rl.Vector3Subtract(camera.Position, camera.Target))
+		right = rl.Vector3Normalize(right)
+		rotation = rl.MatrixMultiply(rotation, rl.MatrixRotate(right, -rl.GetMouseDelta().Y*0.005))
+		rl.HideCursor()
+	} else {
+		rl.ShowCursor()
+	}
+
+	view := rl.Vector3Subtract(camera.Position, camera.Target)
+
+	view = rl.Vector3Transform(view, rotation)
+	camera.Position = rl.Vector3Add(camera.Target, view)
+
+	// Zoom in/out using mouse wheel
+	zoom := rl.GetMouseWheelMove() * 0.5
+	if zoom != 0.0 {
+		view := rl.Vector3Subtract(camera.Position, camera.Target)
+		viewLen := rl.Vector3Length(view)
+
+		newViewLen := rl.Clamp(viewLen-zoom, 1.0, 100.0)
+
+		view = rl.Vector3Normalize(view)
+		view = rl.Vector3Scale(view, newViewLen)
+
+		camera.Position = rl.Vector3Add(camera.Target, view)
+	}
+}
+
 func main() {
 	// Load config
 	cfg, err := ini.Load("res/config.ini")
 	if err != nil {
-		fmt.Printf("Error reading config file: %v\n", err)
+		utils.PrintFancy("Config fatal error", "\033[31m", err)
 		return
 	}
 
@@ -68,13 +102,14 @@ func main() {
 
 	err = tle.FetchTLEs(cfg.Section("General").Key("tle_url").String())
 	if err != nil {
-		fmt.Println("Error fetching TLE data: ", err)
+		utils.PrintFancy("TLE Error", "\033[31m", "Error fetching TLE data: ", err)
 		return
 	}
 
 	satellites, err := tle.LoadTLEs()
 	if err != nil {
-		fmt.Println("Error loading TLEs:", err)
+		// fmt.Println("Error loading TLEs:", err)
+		utils.PrintFancy("TLE Error", "\033[31m", err)
 		return
 	}
 
@@ -85,51 +120,56 @@ func main() {
 	defer rl.CloseWindow()
 
 	selectedSatellite := cfg.Section("Tracker").Key("satellite").String()
-	fmt.Println("[Config] Selected satellite:", selectedSatellite)
+	utils.PrintFancy("Config", "\033[32m", "Selected satellite: ", selectedSatellite)
 
 	// Parse lat/long from
 	parts := strings.Split(cfg.Section("Tracker").Key("ground_station").String(), ", ")
 	if len(parts) < 2 {
-		fmt.Printf("Invalid ground station format")
+		utils.PrintFancy("Config Error", "\033[31m", "Invalid ground station format")
 		return
 	}
 
 	groundLat, err := strconv.ParseFloat(strings.TrimSpace(parts[0]), 64)
 	if err != nil {
-		fmt.Printf("Invalid latitude: %v", err)
+		utils.PrintFancy("Config Error", "\033[31m", "Invalid latitude: ", err)
 		return
 	}
 
 	groundLon, err := strconv.ParseFloat(strings.TrimSpace(parts[1]), 64)
 	if err != nil {
-		fmt.Printf("Invalid longitude: %v", err)
+		utils.PrintFancy("Config Error", "\033[31m", "Invalid longitude: ", err)
 		return
 	}
-	fmt.Println("[Config] Ground station:", groundLon, groundLat)
+	utils.PrintFancy("Config", "\033[32m", "Ground station: ", groundLon, groundLat)
+
+	groundStationName := cfg.Section("Tracker").Key("ground_station_label").String()
+	utils.PrintFancy("Config", "\033[32m", "Ground station name: ", groundStationName)
 
 	now := time.Now().UTC()
 
 	inputText := ""
 	orbitPoints := cfg.Section("Tracker").Key("orbit_duration").MustInt(100)
 	orbitStyle := cfg.Section("Tracker").Key("orbit_style").String()
-	fmt.Println("[Config] Orbit style:", orbitStyle)
+	utils.PrintFancy("Config", "\033[32m", "Orbit style: ", orbitStyle)
+
 	var drawOrbitAsPoint bool
+
 	if orbitStyle == "Points" {
 		drawOrbitAsPoint = true
 	} else if orbitStyle == "Lines" {
 		drawOrbitAsPoint = false
 	} else {
-		fmt.Printf("Invalid orbit style: %v", orbitStyle)
-		fmt.Println("Expected 'Points' or 'Lines'")
+		utils.PrintFancy("Config Error", "\033[31m", "Invalid orbit style: ", orbitStyle)
+		utils.PrintFancy("Config Error", "\033[31m", "Expected orbit_style = 'Lines' or 'Points'")
 		return
 	}
 
-	fmt.Println("[Config] Orbit duration in minutes:", orbitPoints)
+	utils.PrintFancy("Config", "\033[32m", "Orbit duration in minutes: ", orbitPoints)
 
 	var orbitPath = make([]rl.Vector3, orbitPoints)
 	sat, err := selectSatellite(selectedSatellite, satellites, scale, now, orbitPath[:], orbitPoints)
 	if err != nil {
-		fmt.Printf("Problem selecting satellite: %q\n", err)
+		utils.PrintFancy("Config Warning", "\033[33m", err)
 	}
 
 	// Load shaders
@@ -155,7 +195,7 @@ func main() {
 
 	renderTarget := rl.LoadRenderTexture(int32(rl.GetScreenWidth()), int32(rl.GetScreenHeight()))
 	camera := rl.Camera{}
-	camera.Position = rl.NewVector3(-10.0, 8.0, -10.0)
+	camera.Position = rl.NewVector3(-10.0, 10.0, -10.0)
 	camera.Target = rl.NewVector3(0.0, 0.0, 0.0)
 	camera.Up = rl.NewVector3(0.0, 1.0, 0.0)
 	camera.Fovy = 45.0
@@ -184,7 +224,7 @@ func main() {
 		if rl.IsKeyPressed(rl.KeyF1) {
 			followSatellite = !followSatellite
 			// Reset the camera position
-			camera.Position = rl.NewVector3(-10.0, 8.0, -10.0)
+			camera.Position = rl.NewVector3(-10.0, 10.0, -10.0)
 		}
 
 		if followSatellite {
@@ -196,7 +236,8 @@ func main() {
 			zoom -= rl.GetMouseWheelMoveV().Y / 10
 			zoom = rl.Clamp(zoom, 1.1, 10.0)
 		} else {
-			rl.UpdateCamera(&camera, rl.CameraOrbital)
+			// rl.UpdateCamera(&camera, rl.CameraOrbital)
+			controlCamera(&camera)
 		}
 
 		rl.BeginTextureMode(renderTarget)
@@ -286,6 +327,13 @@ func main() {
 		// Draw text for the selected satellite
 		satNamePos := rl.GetWorldToScreen(satPos, camera)
 		rl.DrawTextEx(ui.HackerFont, selectedSatellite, rl.NewVector2(satNamePos.X-rl.MeasureTextEx(ui.HackerFont, selectedSatellite, 20, 1.0).X/2, satNamePos.Y), 20, 1.0, ui.ACCENT_COLOR)
+
+		// Draw as well the ground station name
+		if groundStationName != "" {
+			groundStationPos := rl.NewVector3(groundStationRotated.X/1260, groundStationRotated.Y/1260+0.1, groundStationRotated.Z/1260)
+			groundStationLabelPos := rl.GetWorldToScreen(groundStationPos, camera)
+			rl.DrawTextEx(ui.HackerFont, groundStationName, rl.NewVector2(groundStationLabelPos.X-rl.MeasureTextEx(ui.HackerFont, groundStationName, 20, 1.0).X/2, groundStationLabelPos.Y), 20, 1.0, ui.ACCENT_COLOR)
+		}
 
 		rl.EndDrawing()
 	}

@@ -2,12 +2,13 @@ package tle
 
 import (
 	"bufio"
-	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"strings"
 	"time"
+
+	"gl-tracker/internal/utils"
 )
 
 const (
@@ -35,17 +36,17 @@ func CheckTimestamp() bool {
 		return false
 	}
 
-	return time.Since(ts) < 24 * time.Hour
+	return time.Since(ts) < 24*time.Hour
 }
 
 func FetchTLEs(url string) error {
 	if CheckTimestamp() {
-		fmt.Println("Using cached TLE data.")
+		utils.PrintFancy("TLE", "\033[32m", "Using cached TLE data.")
 		return nil
 	}
 
 	// We need to download + create timestamp
-	fmt.Println("Cached TLE data is missing or outdated. Fetching the latest TLE data...")
+	utils.PrintFancy("TLE", "\033[33m", "Cached TLE data is missing or outdated. Fetching the latest TLE data...")
 
 	resp, err := http.Get(url)
 	if err != nil {
@@ -66,8 +67,8 @@ func FetchTLEs(url string) error {
 	}
 
 	// Create timestamp file
-	os.WriteFile(TLE_FILE + ".timestamp", []byte(time.Now().Format(time.RFC3339)), 0644)
-	fmt.Println("TLE data updated successfully!")
+	os.WriteFile(TLE_FILE+".timestamp", []byte(time.Now().Format(time.RFC3339)), 0644)
+	utils.PrintFancy("TLE", "\033[32m", "TLE data updated successfully!")
 
 	return nil
 }
@@ -98,4 +99,3 @@ func LoadTLEs() (map[string][2]string, error) {
 
 	return satellites, nil
 }
-
