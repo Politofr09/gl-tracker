@@ -8,8 +8,10 @@ It let's you visualize and track satellite orbits in real time with a sick UI
 
 ---
 
-![Satellite Tracking](media/Screenshot1.png)
-![Satellite Tracking](media/Screenshot2.png)
+<img src="media/Screenshot1.png" alt="Screenshot 1" align="left" width="48%"/>
+<img src="media/Screenshot2.png" alt="Screenshot 2" width="48%"/>
+
+---
 
 # Build instructions ⚒️:
 
