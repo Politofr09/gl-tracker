@@ -10,9 +10,9 @@ import (
 	rl "github.com/gen2brain/raylib-go/raylib"
 	"github.com/joshuaferrara/go-satellite"
 
+	"gl-tracker/internal/tle"
 	"gl-tracker/internal/ui"
 	"gl-tracker/internal/utils"
-	"gl-tracker/internal/tle"
 
 	"gopkg.in/ini.v1"
 )
@@ -204,12 +204,18 @@ func main() {
 
 	rl.SetTargetFPS(60)
 
-	// now := time.Now().UTC()
+	lastUpdateMinute := -1
+
 	for !rl.WindowShouldClose() {
-		// now = now.Add(time.Second * 10)
+		// now = now.Add(time.Second * 5)
 		now = time.Now().UTC()
 
-		computeOrbitPath(sat, now, scale, orbitPath[:], orbitPoints)
+		// Update the satellite position and orbit path every minute
+		if now.Minute() != lastUpdateMinute {
+			utils.PrintFancy("Update", "\033[32m", "Recalculating satellite orbit path")
+			computeOrbitPath(sat, now, scale, orbitPath[:], orbitPoints)
+			lastUpdateMinute = now.Minute()
+		}
 
 		// Recreate the render texture if the window is resized
 		if rl.IsWindowResized() {
